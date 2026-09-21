@@ -1,0 +1,34 @@
+{
+  "Pregnancies": {
+    "lower": -16.5,
+    "upper": 27.5
+  },
+  "Glucose": {
+    "lower": -70.0,
+    "upper": 332.0
+  },
+  "BloodPressure": {
+    "lower": -8.0,
+    "upper": 152.0
+  },
+  "SkinThickness": {
+    "lower": -28.5,
+    "upper": 87.5
+  },
+  "Insulin": {
+    "lower": -345.50000000000006,
+    "upper": 707.7
+  },
+  "BMI": {
+    "lower": -12.487499999999994,
+    "upper": 80.01249999999999
+  },
+  "DiabetesPedigreeFunction": {
+    "lower": -1.4215,
+    "upper": 2.7344999999999997
+  },
+  "Age": {
+    "lower": -31.5,
+    "upper": 108.5
+  }
+}
