@@ -1,0 +1,20 @@
+# This is a boilerplate parameters config generated for pipeline 'modelling'
+# using Kedro 1.5.0.
+#
+# Documentation for this file format can be found in "Parameters"
+# Link: https://docs.kedro.org/en/1.5.0/configuration/parameters.html
+
+modelling_baseline:
+  class_path: "sklearn.linear_model.LogisticRegression"
+  target_column: 'Outcome'
+  train_splits:
+    - 'train'
+  eval_splits:
+    - 'train'
+    - 'test'
+
+"""
+entendo que nao preciso de Validation split, pois o notebook que o projeto se baseia nao tem. 
+Os Hyperparametros sao tunados com GridSearchCV, que supostamente já usa cross-validation no train split. 
+Isso eh a validacao no nosso caso. Ademias, o dataset ja eh bastante pequeno 'e um split ainda mais reduziria o set de treino. 
+"""

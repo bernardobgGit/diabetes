@@ -1,0 +1,142 @@
+# Here you can define all your datasets by using simple YAML syntax.
+#
+# Documentation for this file format can be found in "The Data Catalog"
+# Link: https://docs.kedro.org/en/stable/catalog-data/introduction/#data-catalog
+
+# Naming: <layer>_diabetes_dataset_<modelling|inference>
+# The 'layer' metadata only groups the datasets by layer in Kedro-Viz.
+
+# 01_raw
+raw_diabetes_dataset_modelling:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/diabetes-dataset-modelling.csv
+  metadata:
+    kedro-viz:
+      layer: raw
+
+raw_diabetes_dataset_inference:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/diabetes-dataset-inference.csv
+  metadata:
+    kedro-viz:
+      layer: raw
+
+# 02_intermediate
+intermediate_diabetes_dataset_modelling:
+  type: pandas.CSVDataset
+  filepath: data/02_intermediate/intermediate_diabetes_dataset_modelling.csv
+  metadata:
+    kedro-viz:
+      layer: intermediate
+
+# 03_primary
+primary_diabetes_dataset_modelling:
+  type: pandas.CSVDataset
+  filepath: data/03_primary/primary_diabetes_dataset_modelling.csv
+  metadata:
+    kedro-viz:
+      layer: primary
+
+primary_diabetes_dataset_modelling_train:
+  type: pandas.CSVDataset
+  filepath: data/03_primary/primary_diabetes_dataset_modelling_train.csv
+  metadata:
+    kedro-viz:
+      layer: primary
+
+primary_diabetes_dataset_modelling_test:
+  type: pandas.CSVDataset
+  filepath: data/03_primary/primary_diabetes_dataset_modelling_test.csv
+  metadata:
+    kedro-viz:
+      layer: primary
+
+# 04_feature
+feature_diabetes_dataset_modelling_train:
+  type: pandas.CSVDataset
+  filepath: data/04_feature/feature_diabetes_dataset_modelling_train.csv
+  metadata:
+    kedro-viz:
+      layer: feature
+
+feature_diabetes_dataset_modelling_test:
+  type: pandas.CSVDataset
+  filepath: data/04_feature/feature_diabetes_dataset_modelling_test.csv
+  metadata:
+    kedro-viz:
+      layer: feature
+
+# 05_model_input
+# Versioning is switched off for now (`versioned: false`), so each run overwrites
+# these files. To keep every run under one timestamp again, set it back to true
+# on ALL of the datasets below and on the master table and the baseline model, so
+# a train table keeps its matching test table, imputer, outlier limits, encoder
+# and scaler. Delete the old plain files first: a versioned dataset cannot be
+# saved over a plain file with the same name (and the reverse is also true).
+model_input_diabetes_dataset_modelling_train:
+  type: pandas.CSVDataset
+  filepath: data/05_model_input/model_input_diabetes_dataset_modelling_train.csv
+  versioned: false
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+model_input_diabetes_dataset_modelling_test:
+  type: pandas.CSVDataset
+  filepath: data/05_model_input/model_input_diabetes_dataset_modelling_test.csv
+  versioned: false
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+# What was fitted on the train rows (reused for the test rows and, later, for
+# the inference data).
+imputer_diabetes_modelling:
+  type: pickle.PickleDataset
+  filepath: data/05_model_input/imputer_diabetes_modelling.pkl
+  versioned: false
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+outlier_thresholds_diabetes_modelling:
+  type: json.JSONDataset
+  filepath: data/05_model_input/outlier_thresholds_diabetes_modelling.json
+  versioned: false
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+encoder_diabetes_modelling:
+  type: json.JSONDataset
+  filepath: data/05_model_input/encoder_diabetes_modelling.json
+  versioned: false
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+scaler_diabetes_modelling:
+  type: pickle.PickleDataset
+  filepath: data/05_model_input/scaler_diabetes_modelling.pkl
+  versioned: false
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+# The master table and the baseline model (versioning is off for now, see above).
+master_table_diabetes_dataset_modelling:
+  type: pandas.CSVDataset
+  filepath: data/05_model_input/master_table_diabetes_dataset_modelling.csv
+  versioned: false
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+# 06_models
+baseline_model_diabetes_modelling:
+  type: pickle.PickleDataset
+  filepath: data/06_models/baseline_model_diabetes_modelling.pkl
+  versioned: false
+  metadata:
+    kedro-viz:
+      layer: models

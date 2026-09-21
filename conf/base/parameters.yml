@@ -1,0 +1,40 @@
+columns:
+  features:
+    - Pregnancies
+    - Glucose
+    - BloodPressure
+    - SkinThickness
+    - Insulin
+    - BMI
+    - DiabetesPedigreeFunction
+    - Age
+  target: Outcome
+
+zero_columns:
+  - Glucose
+  - BloodPressure
+  - SkinThickness
+  - Insulin
+  - BMI
+
+split:
+  test_size: 0.30
+  random_state: 17
+
+knn_neighbors: 5
+
+outliers:
+  lower_quantile: 0.05
+  upper_quantile: 0.95
+
+scale_columns:
+  - Pregnancies
+  - Glucose
+  - BloodPressure
+  - SkinThickness
+  - Insulin
+  - BMI
+  - DiabetesPedigreeFunction
+  - Age
+  - "NEW_GLUCOSE * INSULIN"
+  - "NEW_GLUCOSE * PREGNANCIES"
