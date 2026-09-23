@@ -89,39 +89,29 @@ model_input_diabetes_dataset_modelling_test:
     kedro-viz:
       layer: model_input
 
-# What was fitted on the train rows (reused for the test rows and, later, for
-# the inference data).
+# What was fitted on the train rows (reused for the test rows). These are
+# artifacts, not data: they intentionally have no 'layer' metadata because a
+# 'model_input' -> 'feature' edge (through the apply_* nodes) would create a
+# circular dependency between layers in Kedro-Viz.
 imputer_diabetes_modelling:
   type: pickle.PickleDataset
   filepath: data/05_model_input/imputer_diabetes_modelling.pkl
   versioned: false
-  metadata:
-    kedro-viz:
-      layer: model_input
 
 outlier_thresholds_diabetes_modelling:
   type: json.JSONDataset
   filepath: data/05_model_input/outlier_thresholds_diabetes_modelling.json
   versioned: false
-  metadata:
-    kedro-viz:
-      layer: model_input
 
 encoder_diabetes_modelling:
   type: json.JSONDataset
   filepath: data/05_model_input/encoder_diabetes_modelling.json
   versioned: false
-  metadata:
-    kedro-viz:
-      layer: model_input
 
 scaler_diabetes_modelling:
   type: pickle.PickleDataset
   filepath: data/05_model_input/scaler_diabetes_modelling.pkl
   versioned: false
-  metadata:
-    kedro-viz:
-      layer: model_input
 
 # The master table and the baseline model (versioning is off for now, see above).
 master_table_diabetes_dataset_modelling:
@@ -140,3 +130,153 @@ baseline_model_diabetes_modelling:
   metadata:
     kedro-viz:
       layer: models
+
+optimized_model_diabetes_modelling:
+  type: pickle.PickleDataset
+  filepath: data/06_models/optimized_model_diabetes_modelling.pkl
+  versioned: false
+  metadata:
+    kedro-viz:
+      layer: models
+
+# Production artifacts: fitted on ALL the modelling rows by the 'refit'
+# pipeline and consumed by the 'inference' pipeline. They have no 'layer'
+# metadata on purpose: a 'models' -> 'feature' edge in the inference pipeline
+# would create a circular dependency between layers in Kedro-Viz.
+production_imputer_diabetes:
+  type: pickle.PickleDataset
+  filepath: data/06_models/production_imputer_diabetes.pkl
+  versioned: false
+
+production_outlier_thresholds_diabetes:
+  type: json.JSONDataset
+  filepath: data/06_models/production_outlier_thresholds_diabetes.json
+  versioned: false
+
+production_encoder_diabetes:
+  type: json.JSONDataset
+  filepath: data/06_models/production_encoder_diabetes.json
+  versioned: false
+
+production_scaler_diabetes:
+  type: pickle.PickleDataset
+  filepath: data/06_models/production_scaler_diabetes.pkl
+  versioned: false
+
+production_model_diabetes:
+  type: pickle.PickleDataset
+  filepath: data/06_models/production_model_diabetes.pkl
+  versioned: false
+  metadata:
+    kedro-viz:
+      layer: models
+
+# 07_model_output
+inference_predictions:
+  type: pandas.CSVDataset
+  filepath: data/07_model_output/inference_predictions.csv
+  metadata:
+    kedro-viz:
+      layer: model_output
+
+# 08_reporting
+baseline_metrics_diabetes_modelling:
+  type: json.JSONDataset
+  filepath: data/08_reporting/baseline_metrics_diabetes_modelling.json
+  metadata:
+    kedro-viz:
+      layer: reporting
+
+optimized_metrics_diabetes_modelling:
+  type: json.JSONDataset
+  filepath: data/08_reporting/optimized_metrics_diabetes_modelling.json
+  metadata:
+    kedro-viz:
+      layer: reporting
+
+# Refit intermediates (kept in memory; the 'layer' metadata only groups them
+# by layer in Kedro-Viz).
+refit_primary_diabetes_dataset:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: primary
+
+refit_imputed_diabetes_dataset:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature
+
+refit_capped_diabetes_dataset:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature
+
+refit_feature_diabetes_dataset:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature
+
+refit_encoded_diabetes_dataset:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+refit_model_input_diabetes_dataset:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+refit_master_table_diabetes_dataset:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+# Inference intermediates (same idea: memory only, layers for Kedro-Viz).
+intermediate_diabetes_dataset_inference:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: intermediate
+
+primary_diabetes_dataset_inference:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: primary
+
+imputed_diabetes_dataset_inference:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature
+
+capped_diabetes_dataset_inference:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature
+
+feature_diabetes_dataset_inference:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: feature
+
+encoded_diabetes_dataset_inference:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+model_input_diabetes_dataset_inference:
+  type: MemoryDataset
+  metadata:
+    kedro-viz:
+      layer: model_input

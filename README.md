@@ -4,9 +4,77 @@
 
 ## Overview
 
-This is your new Kedro project, which was generated using `kedro 1.5.0`.
+Kedro project built from the `notebooks/diabetes-prediction.ipynb` notebook
+(Pima Indians Diabetes dataset) for the Deployment course. It is organised in
+four pipelines:
 
-Take a look at the [Kedro documentation](https://docs.kedro.org) to get started.
+- **data_engineering**: selects the columns, marks zeros as missing, splits
+  train/test and then fits (train only) and applies the KNN imputer, the
+  outlier thresholds, the feature engineering (`NEW_*` columns), the encoder
+  and the robust scaler — no data leakage.
+- **modelling**: builds the master table, trains the baseline model
+  (LogisticRegression), optimises hyperparameters with GridSearchCV
+  (RandomForestClassifier) and evaluates both on train/test, saving the
+  metrics in `data/08_reporting`.
+- **refit**: refits all the artifacts and the classifier on ALL the modelling
+  rows, producing the production artifacts in `data/06_models`
+  (`production_*`).
+- **inference**: applies the production artifacts to
+  `data/01_raw/diabetes-dataset-inference.csv` and predicts with the
+  production model, writing `data/07_model_output/inference_predictions.csv`.
+
+## How to run
+
+Install dependencies with uv (the `uv.lock` pins every dependency):
+
+```
+uv sync
+```
+
+Run the full pipeline (data engineering + modelling + refit + inference):
+
+```
+uv run kedro run
+```
+
+Visualise the pipelines:
+
+```
+uv run kedro viz
+```
+
+## FastAPI
+
+The project exposes the pipelines as a REST API (`src/diabetes/api.py`):
+
+```
+uv run uvicorn diabetes.api:app --host 0.0.0.0 --port 8000
+```
+
+Swagger docs at `http://localhost:8000/docs`. Endpoints:
+
+- `GET /health` - liveness check
+- `GET /datasets` and `GET /datasets/{name}` - exposes catalog datasets as
+  JSON (e.g. `inference_predictions`, `raw_diabetes_dataset_modelling`)
+- `POST /inference` - online prediction from JSON instances
+- `POST /batch-inference` - runs inference on the catalog CSV
+- `POST /train` + `GET /train/{run_id}` - re-trains asynchronously
+  (data_engineering + modelling + refit)
+
+## Docker
+
+```
+docker compose up --build
+```
+
+The API listens on `http://localhost:8000`. The container mounts `./data`
+(read-write) so the artifacts produced by `POST /train` persist, and `./conf`
+read-only.
+
+## Project rules and guidelines
+
+This Kedro project was generated using `kedro 1.5.0`. Take a look at the
+[Kedro documentation](https://docs.kedro.org) to get started.
 
 ## Rules and guidelines
 

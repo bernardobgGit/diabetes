@@ -1,0 +1,12 @@
+.git
+.venv
+__pycache__
+*.pyc
+*.log
+.viz
+.telemetry
+.ipynb_checkpoints
+tests/
+docs/
+notebooks/
+info.log

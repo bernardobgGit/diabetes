@@ -1,0 +1,43 @@
+{
+  "binary": {
+    "NEW_AGE_CAT": {
+      "mature": 0,
+      "senior": 1
+    },
+    "NEW_GLUCOSE": {
+      "Normal": 0,
+      "Prediabetes": 1
+    },
+    "NEW_INSULIN_SCORE": {
+      "Abnormal": 0,
+      "Normal": 1
+    }
+  },
+  "one_hot": {
+    "NEW_BMI": [
+      "Healthy",
+      "Obese",
+      "Overweight",
+      "Underweight"
+    ],
+    "NEW_AGE_BMI_NOM": [
+      "healthymature",
+      "healthysenior",
+      "obesemature",
+      "obesesenior",
+      "overweightmature",
+      "overweightsenior",
+      "underweightmature"
+    ],
+    "NEW_AGE_GLUCOSE_NOM": [
+      "hiddenmature",
+      "hiddensenior",
+      "highmature",
+      "highsenior",
+      "lowmature",
+      "lowsenior",
+      "normalmature",
+      "normalsenior"
+    ]
+  }
+}

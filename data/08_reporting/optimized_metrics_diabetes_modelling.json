@@ -1,0 +1,27 @@
+{
+  "model_class": "RandomForestClassifier",
+  "metrics": {
+    "train": {
+      "accuracy": 0.9780701754385965,
+      "precision": 0.9876543209876543,
+      "recall": 0.9523809523809523,
+      "f1": 0.9696969696969697,
+      "roc_auc": 0.9985945767195767,
+      "n_rows": 456
+    },
+    "test": {
+      "accuracy": 0.7551020408163265,
+      "precision": 0.5967741935483871,
+      "recall": 0.6166666666666667,
+      "f1": 0.6065573770491803,
+      "roc_auc": 0.8143382352941176,
+      "n_rows": 196
+    }
+  },
+  "best_params": {
+    "max_depth": 10,
+    "min_samples_split": 5,
+    "n_estimators": 200
+  },
+  "best_cv_score": 0.8440129920966903
+}

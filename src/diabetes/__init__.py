@@ -1,4 +1,3 @@
-"""diabetes
-"""
+"""diabetes"""
 
 __version__ = "0.1"

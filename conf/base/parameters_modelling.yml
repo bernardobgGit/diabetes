@@ -13,8 +13,29 @@ modelling_baseline:
     - 'train'
     - 'test'
 
-"""
-entendo que nao preciso de Validation split, pois o notebook que o projeto se baseia nao tem. 
-Os Hyperparametros sao tunados com GridSearchCV, que supostamente já usa cross-validation no train split. 
-Isso eh a validacao no nosso caso. Ademias, o dataset ja eh bastante pequeno 'e um split ainda mais reduziria o set de treino. 
-"""
+# Otimização de hiperparâmetros (GridSearchCV), como no notebook:
+# a grade do RandomForestClassifier é testada com validação cruzada
+# dentro das linhas de treino.
+modelling_optimized:
+  class_path: "sklearn.ensemble.RandomForestClassifier"
+  target_column: 'Outcome'
+  train_splits:
+    - 'train'
+  eval_splits:
+    - 'train'
+    - 'test'
+  init_args:
+    random_state: 46
+  param_grid:
+    n_estimators: [100, 200, 300]
+    max_depth: [null, 5, 10]
+    min_samples_split: [2, 5, 10]
+  cv: 5
+  scoring: "roc_auc"
+  n_jobs: -1
+
+# Nao precisamos de validation split, pois o notebook que o projeto se baseia
+# nao tem. Os hiperparametros sao tunados com GridSearchCV, que ja usa
+# cross-validation no train split — essa eh a validacao no nosso caso. Alem
+# disso, o dataset ja eh bastante pequeno e um split a mais reduziria ainda
+# mais o conjunto de treino.
