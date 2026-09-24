@@ -2,74 +2,202 @@
 
 [![Powered by Kedro](https://img.shields.io/badge/powered_by-kedro-ffc900?logo=kedro)](https://kedro.org)
 
-## Overview
+## Sobre o projeto
 
-Kedro project built from the `notebooks/diabetes-prediction.ipynb` notebook
-(Pima Indians Diabetes dataset) for the Deployment course. It is organised in
-four pipelines:
+Projeto Kedro construído a partir do notebook
+`notebooks/diabetes-prediction.ipynb` (dataset Pima Indians Diabetes), para a
+disciplina de Deployment. O trabalho do notebook foi reorganizado em quatro
+pipelines:
 
-- **data_engineering**: selects the columns, marks zeros as missing, splits
-  train/test and then fits (train only) and applies the KNN imputer, the
-  outlier thresholds, the feature engineering (`NEW_*` columns), the encoder
-  and the robust scaler — no data leakage.
-- **modelling**: builds the master table, trains the baseline model
-  (LogisticRegression), optimises hyperparameters with GridSearchCV
-  (RandomForestClassifier) and evaluates both on train/test, saving the
-  metrics in `data/08_reporting`.
-- **refit**: refits all the artifacts and the classifier on ALL the modelling
-  rows, producing the production artifacts in `data/06_models`
+- **data_engineering**: seleciona as colunas, marca os zeros como valores
+  ausentes, separa treino/teste e então ajusta (só no treino) e aplica o
+  imputador KNN, os limites de outliers, o feature engineering (colunas
+  `NEW_*`), o encoder e o RobustScaler — sem data leakage.
+- **modelling**: monta a master table, treina o modelo baseline
+  (LogisticRegression), otimiza hiperparâmetros com GridSearchCV
+  (RandomForestClassifier) e avalia os dois em treino/teste, salvando as
+  métricas em `data/08_reporting`.
+- **refit**: reajusta todos os artefatos e o classificador com TODAS as
+  linhas do dataset, gerando os artefatos de produção em `data/06_models`
   (`production_*`).
-- **inference**: applies the production artifacts to
-  `data/01_raw/diabetes-dataset-inference.csv` and predicts with the
-  production model, writing `data/07_model_output/inference_predictions.csv`.
+- **inference**: aplica os artefatos de produção no dataset
+  `data/01_raw/diabetes-dataset-inference.csv` e prevê com o modelo de
+  produção, gerando `data/07_model_output/inference_predictions.csv`.
 
-## How to run
+## Pré-requisitos
 
-Install dependencies with uv (the `uv.lock` pins every dependency):
+- Python 3.14+ — `python --version`
+- [uv](https://docs.astral.sh/uv/) — gerenciador de pacotes (`pip install uv`
+  ou `winget install astral-sh.uv`)
+- Docker Desktop (somente para a parte de container)
 
-```
+## 1. Instalação
+
+Clone o repositório e instale as dependências com uv (o `uv.lock` fixa todas
+as versões):
+
+```bash
+git clone https://github.com/bernardobgGit/diabetes.git
+cd diabetes
 uv sync
 ```
 
-Run the full pipeline (data engineering + modelling + refit + inference):
+## 2. Executando os pipelines (Kedro)
 
-```
+Rodar tudo (data_engineering + modelling + refit + inference):
+
+```bash
 uv run kedro run
 ```
 
-Visualise the pipelines:
+Rodar um pipeline por vez:
 
+```bash
+uv run kedro run --pipeline=data_engineering
+uv run kedro run --pipeline=modelling
+uv run kedro run --pipeline=refit
+uv run kedro run --pipeline=inference
 ```
+
+> Atenção: `refit` depende da saída de `data_engineering`, e `inference`
+> depende dos artefatos de `refit`. Rode-os na ordem acima (ou `kedro run`
+> completo, que resolve a ordem sozinho).
+
+Visualizar o grafo dos pipelines (Kedro-Viz):
+
+```bash
 uv run kedro viz
+# abre em http://localhost:4141
 ```
 
-## FastAPI
+Saídas geradas: modelos e artefatos em `data/06_models`, predições em
+`data/07_model_output/inference_predictions.csv`, métricas em
+`data/08_reporting/*.json`.
 
-The project exposes the pipelines as a REST API (`src/diabetes/api.py`):
+## 3. Usando a API (FastAPI)
 
-```
+Suba o servidor:
+
+```bash
 uv run uvicorn diabetes.api:app --host 0.0.0.0 --port 8000
 ```
 
-Swagger docs at `http://localhost:8000/docs`. Endpoints:
+Documentação interativa (Swagger): http://localhost:8000/docs
 
-- `GET /health` - liveness check
-- `GET /datasets` and `GET /datasets/{name}` - exposes catalog datasets as
-  JSON (e.g. `inference_predictions`, `raw_diabetes_dataset_modelling`)
-- `POST /inference` - online prediction from JSON instances
-- `POST /batch-inference` - runs inference on the catalog CSV
-- `POST /train` + `GET /train/{run_id}` - re-trains asynchronously
-  (data_engineering + modelling + refit)
+### Endpoints
 
-## Docker
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | `/health` | verifica se a API está no ar |
+| GET | `/datasets` | lista os datasets expostos |
+| GET | `/datasets/{nome}` | devolve um dataset do catálogo em JSON |
+| POST | `/inference` | predição online a partir de JSON |
+| POST | `/batch-inference` | roda inferência no CSV do catálogo |
+| POST | `/train` | retreina (data_eng + modelling + refit), assíncrono |
+| GET | `/train/{run_id}` | consulta o status de um treino |
 
+### Exemplos
+
+Verificar se está no ar:
+
+```bash
+curl http://localhost:8000/health
 ```
+
+Ler um dataset como JSON (o dataset `inference_predictions` contém as
+predições da última inferência em lote):
+
+```bash
+curl http://localhost:8000/datasets
+curl "http://localhost:8000/datasets/inference_predictions?limit=5"
+curl "http://localhost:8000/datasets/raw_diabetes_dataset_modelling?limit=5"
+```
+
+Predição online (envia instâncias brutas, recebe `prediction` e
+`probability`):
+
+```bash
+curl -X POST http://localhost:8000/inference \
+  -H "Content-Type: application/json" \
+  -d "{\"instances\": [{\"Pregnancies\": 6, \"Glucose\": 148, \"BloodPressure\": 72, \"SkinThickness\": 35, \"Insulin\": 0, \"BMI\": 33.6, \"DiabetesPedigreeFunction\": 0.627, \"Age\": 50}]}"
+```
+
+Resposta:
+
+```json
+{"n_predictions": 1, "predictions": [{"prediction": 1, "probability": 0.81}]}
+```
+
+Inferência em lote (usa o CSV `data/01_raw/diabetes-dataset-inference.csv` e
+salva em `inference_predictions`):
+
+```bash
+curl -X POST http://localhost:8000/batch-inference
+```
+
+Retreinar tudo (necessário se os artefatos `data/06_models/production_*`
+ainda não existirem):
+
+```bash
+curl -X POST http://localhost:8000/train
+# {"run_id": "abc123...", "status": "running"}
+curl http://localhost:8000/train/abc123...
+# {"run_id": "abc123...", "status": "success"}
+```
+
+> Se `/inference` responder erro 409, os artefatos de produção ainda não
+> existem: rode `uv run kedro run` ou `POST /train` primeiro.
+
+## 4. Rodando com Docker
+
+Pré-requisito: **Docker Desktop aberto** (no Windows, ele precisa estar
+rodando antes dos comandos).
+
+Na raiz do projeto:
+
+```bash
 docker compose up --build
 ```
 
-The API listens on `http://localhost:8000`. The container mounts `./data`
-(read-write) so the artifacts produced by `POST /train` persist, and `./conf`
-read-only.
+Isso constrói a imagem (instala as dependências com `uv sync` a partir do
+`uv.lock`) e sobe a API. Quando aparecer `Uvicorn running on
+http://0.0.0.0:8000`, a API está disponível em:
+
+- http://localhost:8000/docs — Swagger
+- http://localhost:8000/health
+
+Teste os mesmos endpoints da seção anterior (`/inference`,
+`/batch-inference`, `/datasets/...`). O compose monta `./data` no container,
+então os artefatos gerados por `POST /train` ficam salvos na pasta `data/`
+do projeto.
+
+Comandos úteis:
+
+```bash
+docker compose up -d      # sobe em segundo plano
+docker compose down       # para e remove o container
+docker compose up --build # reconstrói após mudar o código
+docker logs -f repo-api-1 # acompanha os logs
+```
+
+## Estrutura do projeto
+
+```
+conf/base/            catalog.yml (datasets), parameters*.yml (config)
+data/01_raw/          datasets de entrada (modelling e inference)
+data/06_models/       modelos e artefatos de produção
+data/07_model_output/ inference_predictions.csv
+data/08_reporting/    métricas dos modelos (JSON)
+src/diabetes/
+  api.py              API FastAPI (endpoints)
+  pipelines/
+    data_engineering/ limpeza, split, imputer, outliers, features, encoding, scaler
+    modelling/        master table, treino baseline, GridSearchCV, avaliação
+    refit/            refit dos artefatos e do classificador em todos os dados
+    inference/        transform + predict com os artefatos de produção
+Dockerfile            imagem da API (uv + uvicorn)
+docker-compose.yml    sobe a API na porta 8000 com conf/ e data/ montados
+```
 
 ## Project rules and guidelines
 
