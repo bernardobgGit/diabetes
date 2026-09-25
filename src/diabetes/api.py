@@ -4,7 +4,8 @@ FastAPI layer: exposes the Kedro pipelines as REST endpoints.
 - GET  /health                 - liveness check
 - GET  /datasets               - lists the datasets exposed by the API
 - GET  /datasets/{name}        - returns a catalog dataset as JSON records
-- POST /inference              - online prediction from JSON instances
+- POST /inference              - online prediction for one patient (query params)
+- POST /inference/instances    - online prediction from JSON instances
 - POST /batch-inference        - runs the inference pipeline on the catalog CSV
 - POST /train                  - runs data_engineering + modelling + refit
 - GET  /train/{run_id}         - polls the status of a training run
@@ -17,16 +18,16 @@ import logging
 import threading
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from kedro.framework.project import configure_project, pipelines
 from kedro.framework.session import KedroSession
 from kedro.framework.startup import bootstrap_project
 from kedro.io import MemoryDataset
 from kedro.runner import SequentialRunner
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -55,10 +56,70 @@ _run_lock = threading.Lock()
 _train_runs: dict[str, dict[str, Any]] = {}
 
 
-class InferenceRequest(BaseModel):
-    """Pydantic contract: a list of records with the raw feature columns."""
+class PatientFeatures(BaseModel):
+    """Pydantic contract: the raw feature columns of ONE patient."""
 
-    instances: list[dict[str, Any]]
+    model_config = {"extra": "forbid"}
+
+    Pregnancies: int = Field(
+        ge=0, description="Number of times pregnant.", examples=[6]
+    )
+    Glucose: int = Field(
+        ge=0,
+        description="Plasma glucose concentration (2h oral glucose tolerance "
+        "test), mg/dL.",
+        examples=[148],
+    )
+    BloodPressure: int = Field(
+        ge=0, description="Diastolic blood pressure, mm Hg.", examples=[72]
+    )
+    SkinThickness: int = Field(
+        ge=0, description="Triceps skin fold thickness, mm.", examples=[35]
+    )
+    Insulin: int = Field(
+        ge=0, description="2-hour serum insulin, mu U/ml.", examples=[0]
+    )
+    BMI: float = Field(
+        ge=0, description="Body mass index, kg/m^2.", examples=[33.6]
+    )
+    DiabetesPedigreeFunction: float = Field(
+        ge=0,
+        description="Diabetes likelihood based on family history.",
+        examples=[0.627],
+    )
+    Age: int = Field(ge=0, description="Age, years.", examples=[50])
+
+
+class InferenceRequest(BaseModel):
+    """Pydantic contract: a list of patients with the raw feature columns."""
+
+    instances: list[PatientFeatures] = Field(
+        min_length=1,
+        examples=[
+            [
+                {
+                    "Pregnancies": 6,
+                    "Glucose": 148,
+                    "BloodPressure": 72,
+                    "SkinThickness": 35,
+                    "Insulin": 0,
+                    "BMI": 33.6,
+                    "DiabetesPedigreeFunction": 0.627,
+                    "Age": 50,
+                },
+                {
+                    "Pregnancies": 1,
+                    "Glucose": 85,
+                    "BloodPressure": 66,
+                    "SkinThickness": 29,
+                    "Insulin": 0,
+                    "BMI": 26.6,
+                    "DiabetesPedigreeFunction": 0.351,
+                    "Age": 31,
+                },
+            ]
+        ],
+    )
 
 
 def _ensure_bootstrapped() -> None:
@@ -146,21 +207,17 @@ def get_dataset(dataset_name: str, limit: int | None = None) -> dict[str, Any]:
     }
 
 
-@app.post("/inference")
-def run_inference(request: InferenceRequest) -> dict[str, Any]:
-    """Online inference: predicts from JSON instances with the production model.
+def _predict(instances: list[PatientFeatures]) -> dict[str, Any]:
+    """Runs the inference pipeline on the given patients.
 
     The request data is injected into the catalog as a MemoryDataset and the
     SAME inference pipeline used in batch mode is executed, so online and
     batch predictions are always consistent.
     """
 
-    if not request.instances:
-        raise HTTPException(status_code=422, detail="'instances' cannot be empty")
-
     overrides = {
         "raw_diabetes_dataset_inference": MemoryDataset(
-            data=pd.DataFrame(request.instances)
+            data=pd.DataFrame([p.model_dump() for p in instances])
         ),
         "inference_predictions": MemoryDataset(),
     }
@@ -183,6 +240,25 @@ def run_inference(request: InferenceRequest) -> dict[str, Any]:
         "n_predictions": int(len(predictions)),
         "predictions": predictions[output_cols].to_dict(orient="records"),
     }
+
+
+@app.post("/inference")
+def run_inference(
+    features: Annotated[PatientFeatures, Query()],
+) -> dict[str, Any]:
+    """Online inference for ONE patient, with the production model.
+
+    Each feature is a query parameter (listed under "Parameters" in Swagger).
+    """
+
+    return _predict([features])
+
+
+@app.post("/inference/instances")
+def run_inference_instances(request: InferenceRequest) -> dict[str, Any]:
+    """Online inference for SEVERAL patients, sent as a JSON body."""
+
+    return _predict(request.instances)
 
 
 @app.post("/batch-inference")

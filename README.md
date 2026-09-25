@@ -91,7 +91,8 @@ Documentação interativa (Swagger): http://localhost:8000/docs
 | GET | `/health` | verifica se a API está no ar |
 | GET | `/datasets` | lista os datasets expostos |
 | GET | `/datasets/{nome}` | devolve um dataset do catálogo em JSON |
-| POST | `/inference` | predição online a partir de JSON |
+| POST | `/inference` | predição online de um paciente (parâmetros na URL) |
+| POST | `/inference/instances` | predição online de vários pacientes (JSON) |
 | POST | `/batch-inference` | roda inferência no CSV do catálogo |
 | POST | `/train` | retreina (data_eng + modelling + refit), assíncrono |
 | GET | `/train/{run_id}` | consulta o status de um treino |
@@ -113,11 +114,31 @@ curl "http://localhost:8000/datasets/inference_predictions?limit=5"
 curl "http://localhost:8000/datasets/raw_diabetes_dataset_modelling?limit=5"
 ```
 
-Predição online (envia instâncias brutas, recebe `prediction` e
-`probability`):
+Predição online (envia as variáveis brutas, recebe `prediction` e
+`probability`). Variáveis de entrada (todas obrigatórias, `>= 0`):
+
+| Variável | Tipo | Exemplo |
+|----------|------|---------|
+| `Pregnancies` | int | 6 |
+| `Glucose` | int | 148 |
+| `BloodPressure` | int | 72 |
+| `SkinThickness` | int | 35 |
+| `Insulin` | int | 0 |
+| `BMI` | float | 33.6 |
+| `DiabetesPedigreeFunction` | float | 0.627 |
+| `Age` | int | 50 |
+
+Um paciente, com as variáveis como parâmetros (no Swagger aparecem em
+"Parameters", já preenchidas com os exemplos):
 
 ```bash
-curl -X POST http://localhost:8000/inference \
+curl -X POST "http://localhost:8000/inference?Pregnancies=6&Glucose=148&BloodPressure=72&SkinThickness=35&Insulin=0&BMI=33.6&DiabetesPedigreeFunction=0.627&Age=50"
+```
+
+Vários pacientes de uma vez, em JSON:
+
+```bash
+curl -X POST http://localhost:8000/inference/instances \
   -H "Content-Type: application/json" \
   -d "{\"instances\": [{\"Pregnancies\": 6, \"Glucose\": 148, \"BloodPressure\": 72, \"SkinThickness\": 35, \"Insulin\": 0, \"BMI\": 33.6, \"DiabetesPedigreeFunction\": 0.627, \"Age\": 50}]}"
 ```
